@@ -64,7 +64,7 @@ int main() {
     exit(0);
     return 0;
 }
-
+//functions
 void receive() {
     FILE *sPublic;
     char buffer[BUFFER_SIZE];    
