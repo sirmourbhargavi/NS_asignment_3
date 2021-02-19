@@ -7,16 +7,21 @@
 #include <time.h>
 
 #define BUFFER_SIZE 1024
-#define PORT 8090
-#define SERVER_N "server_n.key"
-#define SERVER_V "server_v.key"
+#define BOB 8060
+#define AS_TGS "./Database/as_tgs.key"
+#define A_AS "./Database/a_as.key"
+#define TGS_BOB "./Database/tgs_bob.key"
+#define A_AS "./Database/a_as.key"
+#define A_TGS "./Database/a_tgs.key"
 
 void receive();
 void writeFile(FILE *fptr, char *buffer,char *fileName);
 big readFile(char *fileName);
 int randInRange(int min, int max);
-big xveModN(big x, big v, big e, big n);
-void auth(big e, big n , char *s , big y,big x , big v , char *buffer , big y_mod_n , big xvemodn);
+void encrypt(char *key, char *mgs);
+void decrypt(char *key, char *mgs);
+void readfiletoString(char *fileName, char * string);
+
 int temp_sock_desc = 0;
 
 int main() {
@@ -38,7 +43,7 @@ int main() {
 
     server.sin_family=AF_INET;
     server.sin_addr.s_addr=INADDR_ANY;
-    server.sin_port=PORT;
+    server.sin_port=BOB;
 
     k=bind(sock_desc,(struct sockaddr*)&server,sizeof(server));
     if(k==-1) {
@@ -67,9 +72,21 @@ int main() {
 
 void receive() {
     FILE *sPublic;
-    char buffer[BUFFER_SIZE];    
-        recv(temp_sock_desc,buffer,BUFFER_SIZE,0);
-        printf("%s \n",buffer);
+    char buffer[BUFFER_SIZE];
+    char nonce[24];
+    char mgs[24]; 
+    char key[24]; 
+    recv(temp_sock_desc,buffer,BUFFER_SIZE,0);
+    printf("Recived enc-nonce %s \n",buffer);
+    for (int i = 0; i < 24; i++) nonce[i] = buffer[i];
+    recv(temp_sock_desc,buffer,BUFFER_SIZE,0);
+    for (int i = 0; i < 24; i++) mgs[i] = buffer[i];
+    readfiletoString(TGS_BOB,key);
+    decrypt(key,mgs);
+    decrypt(mgs,nonce);
+    printf("decy-nonce %s \n",nonce);
+    encrypt(mgs,nonce);
+    send(temp_sock_desc,nonce,BUFFER_SIZE,0);
        
 }
 
@@ -100,4 +117,27 @@ big readFile(char *fileName) {
     return n;
 }
 
+void encrypt(char *key, char *mgs) {
+    aes a;
+    aes_init(&a,MR_CBC,24,key,NULL);
+    aes_encrypt(&a,mgs);
+    aes_end(&a);
+}
+void decrypt(char *key, char *mgs) {
+    aes a;
+    aes_init(&a,MR_CBC,24,key,NULL);
+    aes_reset(&a,MR_CBC,NULL);
+    aes_decrypt(&a,mgs);
+    aes_end(&a);
+}
 
+void readfiletoString(char *fileName, char * string) {
+    FILE *fptr;
+    fptr = fopen(fileName,"r");
+    if(fptr==NULL) {
+        printf("ERROR reading file %s\n",fileName);
+        exit(1);
+    }
+    fgets(string,BUFFER_SIZE,fptr);
+    fclose(fptr);
+}
