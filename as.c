@@ -20,29 +20,27 @@ Brijesh Kumar       MIT2020115
 #include <time.h>
 
 #define BUFFER_SIZE 1024
-#define TGS 8050
-#define SERVER_N "server_n.key"
-#define SERVER_V "server_v.key"
-
+#define AS 8090
 #define AS_TGS "./as_tgs.key"
 #define A_AS "./a_as.key"
 #define TGS_BOB "./tgs_bob.key"
 #define A_AS "./a_as.key"
 #define A_TGS "./a_tgs.key"
 
-void encrypt(char *key, char *mgs);
-void decrypt(char *key, char *mgs);
+char buffer[BUFFER_SIZE];
 
 void receive();
-void writeFile(FILE *fptr, char *buffer,char *fileName);
+void writeFile(char *buffer,char *fileName);
 big readFile(char *fileName);
 int randInRange(int min, int max);
 void readfiletoString(char *fileName, char * string);
 void generateRandomKey(char *key);
-int randInRange(int min, int max);
-int comapreTwoKey(char *key1, char *key2);
+void encrypt(char *key, char *mgs);
+void decrypt(char *key, char *mgs);
 
+char key[24];
 int temp_sock_desc = 0;
+aes a;
 
 int main() {
     char buf[BUFFER_SIZE];
@@ -63,7 +61,7 @@ int main() {
 
     server.sin_family=AF_INET;
     server.sin_addr.s_addr=INADDR_ANY;
-    server.sin_port=TGS;
+    server.sin_port=AS;
 
     k=bind(sock_desc,(struct sockaddr*)&server,sizeof(server));
     if(k==-1) {
@@ -82,53 +80,64 @@ int main() {
     if(temp_sock_desc==-1){
         printf("Error in temporary socket creation");
         exit(1);
-    }else{
-        printf("Client Connected \n");
+    }else {
+        printf("Client Has conneted \n");
     }
     //Server setup end
-    
+    //AES init;
+    char key[25];
+
     receive();
+
+    aes_end(&a);
     exit(0);
     return 0;
 }
 
-void receive() {
-    char keyA_TGS[24];
-    char sessonKeyA[24];
-    char sessonKeyB[24];
-    char data[48];
-    char buffer[BUFFER_SIZE];    
-    recv(temp_sock_desc,buffer,BUFFER_SIZE,0);
-    for(int i = 0; i<24; i++) 
-        keyA_TGS[i] = buffer[i];
-    printf("Recived playload : %s \n",buffer);
-    recv(temp_sock_desc,buffer,BUFFER_SIZE,0);
-    printf("Recived playload : %s \n",buffer);
-    char mgs[24];
-    for(int i = 0; i<24; i++) 
-        mgs[i] = buffer[i];
-    char key[24];
-    readfiletoString(AS_TGS,key);
-    decrypt(key,mgs);
-    printf("dec :  %s \n",mgs);
+void receive() {   
+    char key2[24];
+    char data[49];
+    while (1) {
+        recv(temp_sock_desc,buffer,BUFFER_SIZE,0);
+        printf("%s \n",buffer);
+        switch (buffer[0]) {
+        case '1':
+            generateRandomKey(key);
+            writeFile(key,A_AS);
+            generateRandomKey(key);
+            writeFile(key,AS_TGS);
+            generateRandomKey(key);
+            writeFile(key,TGS_BOB);
+            generateRandomKey(key);
+            writeFile(key,A_TGS);
+        break;
+        case '2':
+            readfiletoString(A_TGS,key2);
+            for(int i = 0; i<24; i++)
+                data[i] = key2[i];
 
-    if(comapreTwoKey(mgs,keyA_TGS)) {
-       generateRandomKey(sessonKeyA);
-       printf("Session key for ALICE and BOB : %s\n",sessonKeyA);
-       for(int i = 0; i<24; i++) sessonKeyB[i] = sessonKeyA[i];
-       readfiletoString(A_TGS,key);
-       encrypt(key,sessonKeyA);
-       readfiletoString(TGS_BOB,key);
-       encrypt(key,sessonKeyB);
-       printf("Encrypted session key for Alice : %s\n",sessonKeyA);
-       printf("Encrypted session key for BOB : %s\n",sessonKeyB);
-       send(temp_sock_desc,sessonKeyA,BUFFER_SIZE,0);
-       send(temp_sock_desc,sessonKeyB,BUFFER_SIZE,0);
+            readfiletoString(A_TGS,key); //read a_tgs key for encrptyion of AS_TGS;
+            readfiletoString(AS_TGS,key2); // read AS_TGS key 
+            encrypt(key2,key); //enc A_TGS key with AS_TGS key;
+
+            for(int i = 24; i<48; i++)
+                data[i] = key[i-24];
+            data[48] = '\0';
+            readfiletoString(A_AS,key);
+            printf("Data playload : %s\n",data);
+            encrypt(key,data);
+            printf("Send Encrypted Data : %s\n",data);
+            send(temp_sock_desc,data,48,0);
+            exit(1);
+            break;
+        default:
+            break;
+        }
     }
-       
 }
 
-void writeFile(FILE *fptr, char *buffer,char *fileName) {
+void writeFile(char *buffer,char *fileName) {
+    FILE *fptr;
     fptr = fopen(fileName,"w");
     if(fptr==NULL) {
         printf("Unable to write file %s\n",fileName);
@@ -155,6 +164,27 @@ big readFile(char *fileName) {
     return n;
 }
 
+void readfiletoString(char *fileName, char * string) {
+    FILE *fptr;
+    fptr = fopen(fileName,"r");
+    if(fptr==NULL) {
+        printf("ERROR reading file %s\n",fileName);
+        exit(1);
+    }
+    fgets(string,BUFFER_SIZE,fptr);
+    fclose(fptr);
+}
+void generateRandomKey(char *key) {
+    for(int i = 0; i<24; i++) {
+        key[i] = randInRange(0,26)+'a';
+    }
+    printf("%s\n",key);
+}
+int randInRange(int min, int max) {
+    double r_max = RAND_MAX;
+  return min + (int) (rand() / (double) (r_max + 1) * (max - min + 1));
+}
+
 void encrypt(char *key, char *mgs) {
     aes a;
     aes_init(&a,MR_CBC,24,key,NULL);
@@ -167,33 +197,4 @@ void decrypt(char *key, char *mgs) {
     aes_reset(&a,MR_CBC,NULL);
     aes_decrypt(&a,mgs);
     aes_end(&a);
-}
-
-void readfiletoString(char *fileName, char * string) {
-    FILE *fptr;
-    fptr = fopen(fileName,"r");
-    if(fptr==NULL) {
-        printf("ERROR reading file %s\n",fileName);
-        exit(1);
-    }
-    fgets(string,BUFFER_SIZE,fptr);
-    fclose(fptr);
-}
-
-void generateRandomKey(char *key) {
-    for(int i = 0; i<24; i++) {
-        key[i] = randInRange(0,26)+'a';
-    }
-    //printf("%s\n",key);
-}
-int randInRange(int min, int max) {
-    double r_max = RAND_MAX;
-  return min + (int) (rand() / (double) (r_max + 1) * (max - min + 1));
-}
-
-int comapreTwoKey(char *key1, char *key2) {
-    for(int i = 0; i<24; i++)
-        if(key1[i]!=key2[i]) return 0;
-    
-    return 1;
 }
