@@ -1,3 +1,16 @@
+/*
+
+Assignment 3
+Group 5
+
+Bhargavi Sirmour    MIT2020033
+Sk Mahafuz Zaman    MIT2020005
+Yash Anad           MIT2020032
+Brijesh Kumar       MIT2020115
+
+*/
+
+
 #include<sys/socket.h>
 #include<stdio.h>
 #include<string.h>
@@ -8,11 +21,11 @@
 
 #define BUFFER_SIZE 1024
 #define AS 8090
-#define AS_TGS "./Database/as_tgs.key"
-#define A_AS "./Database/a_as.key"
-#define TGS_BOB "./Database/tgs_bob.key"
-#define A_AS "./Database/a_as.key"
-#define A_TGS "./Database/a_tgs.key"
+#define AS_TGS "./as_tgs.key"
+#define A_AS "./a_as.key"
+#define TGS_BOB "./tgs_bob.key"
+#define A_AS "./a_as.key"
+#define A_TGS "./a_tgs.key"
 
 char buffer[BUFFER_SIZE];
 
@@ -111,8 +124,9 @@ void receive() {
                 data[i] = key[i-24];
             data[48] = '\0';
             readfiletoString(A_AS,key);
+            printf("Data playload : %s\n",data);
             encrypt(key,data);
-            printf("%s\n",data);
+            printf("Send Encrypted Data : %s\n",data);
             send(temp_sock_desc,data,48,0);
             exit(1);
             break;

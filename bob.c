@@ -1,3 +1,16 @@
+/*
+
+Assignment 3
+Group 5
+
+Bhargavi Sirmour    MIT2020033
+Sk Mahafuz Zaman    MIT2020005
+Yash Anad           MIT2020032
+Brijesh Kumar       MIT2020115
+
+*/
+
+
 #include<sys/socket.h>
 #include<stdio.h>
 #include<string.h>
@@ -8,11 +21,11 @@
 
 #define BUFFER_SIZE 1024
 #define BOB 8060
-#define AS_TGS "./Database/as_tgs.key"
-#define A_AS "./Database/a_as.key"
-#define TGS_BOB "./Database/tgs_bob.key"
-#define A_AS "./Database/a_as.key"
-#define A_TGS "./Database/a_tgs.key"
+#define AS_TGS "./as_tgs.key"
+#define A_AS "./a_as.key"
+#define TGS_BOB "./tgs_bob.key"
+#define A_AS "./a_as.key"
+#define A_TGS "./a_tgs.key"
 
 void receive();
 void writeFile(FILE *fptr, char *buffer,char *fileName);
@@ -77,14 +90,15 @@ void receive() {
     char mgs[24]; 
     char key[24]; 
     recv(temp_sock_desc,buffer,BUFFER_SIZE,0);
-    printf("Recived enc-nonce %s \n",buffer);
+    printf("Recived playload : %s \n",buffer);
     for (int i = 0; i < 24; i++) nonce[i] = buffer[i];
     recv(temp_sock_desc,buffer,BUFFER_SIZE,0);
+    printf("Recived Encrypted TGS key playload : %s \n",buffer);
     for (int i = 0; i < 24; i++) mgs[i] = buffer[i];
     readfiletoString(TGS_BOB,key);
     decrypt(key,mgs);
     decrypt(mgs,nonce);
-    printf("decy-nonce %s \n",nonce);
+    printf("Decrypted nonce : %s \n",nonce);
     encrypt(mgs,nonce);
     send(temp_sock_desc,nonce,BUFFER_SIZE,0);
        

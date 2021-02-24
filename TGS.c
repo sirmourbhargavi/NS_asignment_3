@@ -1,3 +1,16 @@
+/*
+
+Assignment 3
+Group 5
+
+Bhargavi Sirmour    MIT2020033
+Sk Mahafuz Zaman    MIT2020005
+Yash Anad           MIT2020032
+Brijesh Kumar       MIT2020115
+
+*/
+
+
 #include<sys/socket.h>
 #include<stdio.h>
 #include<string.h>
@@ -11,11 +24,11 @@
 #define SERVER_N "server_n.key"
 #define SERVER_V "server_v.key"
 
-#define AS_TGS "./Database/as_tgs.key"
-#define A_AS "./Database/a_as.key"
-#define TGS_BOB "./Database/tgs_bob.key"
-#define A_AS "./Database/a_as.key"
-#define A_TGS "./Database/a_tgs.key"
+#define AS_TGS "./as_tgs.key"
+#define A_AS "./a_as.key"
+#define TGS_BOB "./tgs_bob.key"
+#define A_AS "./a_as.key"
+#define A_TGS "./a_tgs.key"
 
 void encrypt(char *key, char *mgs);
 void decrypt(char *key, char *mgs);
@@ -88,9 +101,9 @@ void receive() {
     recv(temp_sock_desc,buffer,BUFFER_SIZE,0);
     for(int i = 0; i<24; i++) 
         keyA_TGS[i] = buffer[i];
-    printf("%s \n",buffer);
+    printf("Recived playload : %s \n",buffer);
     recv(temp_sock_desc,buffer,BUFFER_SIZE,0);
-    printf("%s \n",buffer);
+    printf("Recived playload : %s \n",buffer);
     char mgs[24];
     for(int i = 0; i<24; i++) 
         mgs[i] = buffer[i];
@@ -101,12 +114,14 @@ void receive() {
 
     if(comapreTwoKey(mgs,keyA_TGS)) {
        generateRandomKey(sessonKeyA);
-       printf("session key %s\n",sessonKeyA);
+       printf("Session key for ALICE and BOB : %s\n",sessonKeyA);
        for(int i = 0; i<24; i++) sessonKeyB[i] = sessonKeyA[i];
        readfiletoString(A_TGS,key);
        encrypt(key,sessonKeyA);
        readfiletoString(TGS_BOB,key);
        encrypt(key,sessonKeyB);
+       printf("Encrypted session key for Alice : %s\n",sessonKeyA);
+       printf("Encrypted session key for BOB : %s\n",sessonKeyB);
        send(temp_sock_desc,sessonKeyA,BUFFER_SIZE,0);
        send(temp_sock_desc,sessonKeyB,BUFFER_SIZE,0);
     }
@@ -169,7 +184,7 @@ void generateRandomKey(char *key) {
     for(int i = 0; i<24; i++) {
         key[i] = randInRange(0,26)+'a';
     }
-    printf("%s\n",key);
+    //printf("%s\n",key);
 }
 int randInRange(int min, int max) {
     double r_max = RAND_MAX;
