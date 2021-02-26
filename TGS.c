@@ -50,7 +50,6 @@ int main() {
     socklen_t len;
     int sock_desc;
     struct sockaddr_in server,client;
-
     //Server setup
     memset(&server,0,sizeof(server));
     memset(&client,0,sizeof(client));
