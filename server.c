@@ -6,7 +6,7 @@
 #include "../miracl.h"
 #include <time.h>
 
-#define BUFFER_SIZE 1024
+#define BUFFER_SIZE 2048
 #define PORT 8090
 #define SERVER_N "server_n.key"
 #define SERVER_V "server_v.key"
@@ -14,10 +14,10 @@
 void receive();
 void writeFile(FILE *fptr, char *buffer,char *fileName);
 big readFile(char *fileName);
-int randInRange(int min, int max);
-big xveModN(big x, big v, big e, big n);
-void auth(big e, big n , char *s , big y,big x , big v , char *buffer , big y_mod_n , big xvemodn);
+void printHex(char *stng);
+
 int temp_sock_desc = 0;
+miracl *mip;
 
 int main() {
     char buf[BUFFER_SIZE];
@@ -25,7 +25,6 @@ int main() {
     socklen_t len;
     int sock_desc;
     struct sockaddr_in server,client;
-
     //Server setup
     memset(&server,0,sizeof(server));
     memset(&client,0,sizeof(client));
@@ -59,6 +58,9 @@ int main() {
         exit(1);
     }
     //Server setup end
+
+    //miracl setup
+    mip = mirsys(5000, 10);
     
     receive();
     exit(0);
@@ -67,10 +69,38 @@ int main() {
 //functions
 void receive() {
     FILE *sPublic;
+    big enc = mirvar(0);
+    big N = mirvar(0);
+    big e = mirvar(0);
+    big dec = mirvar(0);
+    big publicKey = mirvar(0);
+    FILE *ifile;
+
+    
+
     char buffer[BUFFER_SIZE];    
-        recv(temp_sock_desc,buffer,BUFFER_SIZE,0);
-        printf("%s \n",buffer);
-       
+    recv(temp_sock_desc,buffer,BUFFER_SIZE,0);
+    //printHex(buffer);
+    printf("%s\n",buffer);
+    cinstr(enc,buffer);
+    printf("Recived Signature key : ");
+    mip->IOBASE=16;
+    cotnum(enc,stdout);
+    ifile=fopen("public.key","rt");
+    cinnum(N,ifile);
+    cinnum(e,ifile);
+    printf("N = ");
+    cotnum(N, stdout);
+    printf("e = ");
+    cotnum(e, stdout);
+    fclose(ifile);
+
+    mip->IOBASE=16;
+
+    powmod(enc,e,N,dec);
+    printf("dec Signature key : ");
+    cotnum(dec,stdout);
+
 }
 
 void writeFile(FILE *fptr, char *buffer,char *fileName) {
@@ -101,3 +131,7 @@ big readFile(char *fileName) {
 }
 
 
+void printHex(char *stng) {
+    for (int i=0;i<32;i++) 
+        printf("%02x",(unsigned char)stng[i]);
+}
