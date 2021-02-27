@@ -23,11 +23,11 @@ Brijesh Kumar       MIT2020115
 #define TGS 8050
 #define BOB 8060
 
-#define AS_TGS "./as_tgs.key"
-#define A_AS "./a_as.key"
-#define TGS_BOB "./tgs_bob.key"
-#define A_AS "./a_as.key"
-#define A_TGS "./a_tgs.key"
+#define AS_TGS "./Database/as_tgs.key"
+#define A_AS "./Database/a_as.key"
+#define TGS_BOB "./Database/tgs_bob.key"
+#define A_AS "./Database/a_as.key"
+#define A_TGS "./Database/a_tgs.key"
 int sock_desc;
 
 big readFile(char *fileName);
@@ -38,6 +38,7 @@ void getTGSTicket();
 void connectWithTGS();
 void encrypt(char *key, char *mgs);
 void decrypt(char *key, char *mgs);
+void verifyWithBob();
 
 char key[24];
 char key2[24];
@@ -49,10 +50,12 @@ int main() {
     printf("YASH ANAND \t MIT2020032\n");
     printf("BRIJESH KUMAR \t MIT2020115 \n");
     printf("_______________________\n\n");
+    printf("NOTE : Please go throgh read me for setup process . \n");
     printf("1. Register (We have assumed AS TGS and BOB have already registerd with each other )\n");
     printf("2. Authentication Process. \n");
     getTGSTicket();
     connectWithTGS();
+    verifyWithBob();
     return 0;
 }
 
@@ -203,4 +206,44 @@ void connectWithTGS() {
     decrypt(key3,key);
     printf("Decrypted Session key %s\n",key);
     
+}
+
+void verifyWithBob() {
+    printf("\n \n");
+
+    int k;
+    struct sockaddr_in client;
+    memset(&client,0,sizeof(client));
+    sock_desc=socket(AF_INET,SOCK_STREAM,0);
+
+    if(sock_desc==-1) {
+        printf("Error in socket creation");
+        exit(1);
+    }
+
+    client.sin_family=AF_INET;
+    client.sin_addr.s_addr=INADDR_ANY;
+    client.sin_port=BOB;
+
+    k=connect(sock_desc,(struct sockaddr*)&client,sizeof(client));
+    if(k==-1) {
+        printf("Error in connecting to server\n");
+        exit(1);
+    }else{
+        printf("Conneted to BOB server\n");
+    }
+    char nonce[24] = "464878946313";
+    char copy_nonce[24];
+    for(int i = 0; i<24; i++) copy_nonce[i] = nonce[i];
+    printf("Generated Nonce : %s\n",nonce);
+    encrypt(key,nonce);
+    printf("Send playload to BOB : %s\n",nonce);
+    send(sock_desc,nonce,BUFFER_SIZE,0);
+    printf("Send playload encrypted with TGS key to BOB : %s\n",key2);
+    send(sock_desc,key2,BUFFER_SIZE,0);
+    recv(sock_desc,buffer,BUFFER_SIZE,0);
+    for(int i = 0; i<24; i++) nonce[i] = buffer[i];
+    decrypt(key,nonce);
+    if(strcmp(copy_nonce,nonce)==0) printf("AUTH\n");
+    else printf("FAILED\n");
 }

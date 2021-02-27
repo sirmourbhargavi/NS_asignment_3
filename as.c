@@ -21,11 +21,11 @@ Brijesh Kumar       MIT2020115
 
 #define BUFFER_SIZE 1024
 #define AS 8090
-#define AS_TGS "./as_tgs.key"
-#define A_AS "./a_as.key"
-#define TGS_BOB "./tgs_bob.key"
-#define A_AS "./a_as.key"
-#define A_TGS "./a_tgs.key"
+#define AS_TGS "./Database/as_tgs.key"
+#define A_AS "./Database/a_as.key"
+#define TGS_BOB "./Database/tgs_bob.key"
+#define A_AS "./Database/a_as.key"
+#define A_TGS "./Database/a_tgs.key"
 
 char buffer[BUFFER_SIZE];
 
