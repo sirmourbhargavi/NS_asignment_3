@@ -24,11 +24,11 @@ Brijesh Kumar       MIT2020115
 #define SERVER_N "server_n.key"
 #define SERVER_V "server_v.key"
 
-#define AS_TGS "./as_tgs.key"
-#define A_AS "./a_as.key"
-#define TGS_BOB "./tgs_bob.key"
-#define A_AS "./a_as.key"
-#define A_TGS "./a_tgs.key"
+#define AS_TGS "./Database/as_tgs.key"
+#define A_AS "./Database/a_as.key"
+#define TGS_BOB "./Database/tgs_bob.key"
+#define A_AS "./Database/a_as.key"
+#define A_TGS "./Database/a_tgs.key"
 
 void encrypt(char *key, char *mgs);
 void decrypt(char *key, char *mgs);
@@ -50,6 +50,7 @@ int main() {
     socklen_t len;
     int sock_desc;
     struct sockaddr_in server,client;
+
     //Server setup
     memset(&server,0,sizeof(server));
     memset(&client,0,sizeof(client));
